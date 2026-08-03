@@ -12,7 +12,7 @@ def _default_sqlite_url() -> str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_BACKEND_ROOT / ".env"),
         extra="ignore",
         protected_namespaces=("settings_",),
     )

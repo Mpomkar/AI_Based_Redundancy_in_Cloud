@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="900" height="340" fill="#f8fafc" rx="12"/>
+  <text x="450" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">What Is AI vs Rule-Based in This Project?</text>
+
+  <!-- AI column -->
+  <rect x="40" y="50" width="400" height="280" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="260" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="#1d4ed8">Machine Learning (AI)</text>
+  <text x="60" y="108" font-size="12" fill="#1e40af"> Logistic Regression classifier</text>
+  <text x="60" y="130" font-size="12" fill="#1e40af"> Predicts redundancy probability (01)</text>
+  <text x="60" y="152" font-size="12" fill="#1e40af"> Uses 3 engineered features</text>
+  <text x="60" y="174" font-size="12" fill="#1e40af"> Risk score blends ML + similarity</text>
+  <text x="60" y="206" font-size="11" fill="#475569">Code: backend/app/services/</text>
+  <text x="60" y="222" font-size="11" fill="#475569">  trainer.py  model training</text>
+  <text x="60" y="242" font-size="11" fill="#475569">  predictor.py  inference</text>
+  <text x="60" y="258" font-size="11" fill="#475569">  features.py  feature engineering</text>
+  <text x="60" y="278" font-size="11" fill="#64748b">Not used: deep learning, LLMs, neural nets</text>
+
+  <!-- Rules column -->
+  <rect x="460" y="50" width="400" height="280" rx="10" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+  <text x="700" y="78" text-anchor="middle" font-size="14" font-weight="700" fill="#15803d">Rule-Based / Classical Algorithms</text>
+  <text x="480" y="108" font-size="12" fill="#166534"> SHA-256 exact duplicate detection</text>
+  <text x="480" y="130" font-size="12" fill="#166534"> Jaccard word similarity (PDF/DOCX)</text>
+  <text x="480" y="152" font-size="12" fill="#166534"> Perceptual hash for images (pHash)</text>
+  <text x="480" y="174" font-size="12" fill="#166534"> Policy threshold (default 92% match)</text>
+  <text x="480" y="196" font-size="12" fill="#166534"> difflib content guidance / diff hints</text>
+  <text x="480" y="226" font-size="11" fill="#475569">Code: backend/app/services/</text>
+  <text x="480" y="242" font-size="11" fill="#475569">  pdf_text.py, image_sim.py</text>
+  <text x="480" y="258" font-size="11" fill="#475569">  text_guidance.py, process_upload.py</text>
+  <text x="480" y="278" font-size="11" fill="#64748b">Frontend model dropdown is UI-only today</text>
+</svg>
