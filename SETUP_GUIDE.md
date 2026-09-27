@@ -263,12 +263,14 @@ API documentation: http://127.0.0.1:8000/docs
 
 ## 8. Login credentials
 
-| Field | Value |
-|-------|-------|
-| **Username** | `admin` (case-insensitive) |
-| **Password** | `ADMIN123` (case-sensitive) |
+Backend JWT authentication (seeded on first startup):
 
-This is a **demo client-side login** (stored in browser `localStorage`). It is not connected to the backend API.
+| Role | Username | Password | Lands on |
+|------|----------|----------|----------|
+| **Admin** | `admin` (case-insensitive) | `ADMIN123` | `/admin` |
+| **Demo user** | `user` (case-insensitive) | `USER123` | `/portal` |
+
+Admin can manage users under **Manage Users**. Each user only sees their own uploads.
 
 ---
 

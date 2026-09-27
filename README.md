@@ -11,7 +11,7 @@ Full-stack demo: **FastAPI** backend (SHA-256 dedup, PDF + **Word (.docx)** text
 | **1. One-time setup** | `.\scripts\setup.ps1` | `chmod +x scripts/*.sh && ./scripts/setup.sh` |
 | **2. Start servers** | `.\scripts\start-all.ps1` | `./scripts/start-backend.sh` + `./scripts/start-frontend.sh` |
 | **3. Open app** | http://localhost:5173 | same |
-| **4. Login** | `admin` / `ADMIN123` | same |
+| **4. Login** | Admin: `admin` / `ADMIN123` · User: `user` / `USER123` | same |
 
 Double-click on Windows: `scripts\setup.bat` (install) or `scripts\start-all.bat` (install + run).
 

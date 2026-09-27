@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Q&amp;A — AI Cloud Redundancy System</title>
+  <style>
+    :root {
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --bg: #f8fafc;
+      --q-bg: #eff6ff;
+      --a-bg: #f0fdf4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      line-height: 1.55;
+      color: var(--text);
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 40px;
+      background: #fff;
+    }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; color: #0f172a; }
+    h2 {
+      font-size: 1.15rem;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 2px solid var(--accent);
+      color: #0f172a;
+    }
+    p, li { font-size: 0.95rem; }
+    .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .print-hint {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.9rem;
+    }
+    .toc { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+    .toc ol { margin: 0; padding-left: 1.25rem; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .qa {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+    .q {
+      background: var(--q-bg);
+      padding: 12px 14px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .q span { color: var(--accent); margin-right: 6px; }
+    .a {
+      background: var(--a-bg);
+      padding: 12px 14px;
+    }
+    .a strong { color: #166534; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+    th { background: var(--bg); font-weight: 600; }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.85rem;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    @media print {
+      body { padding: 16px; max-width: none; }
+      .print-hint { display: none; }
+      .qa { break-inside: avoid; }
+      h2 { break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Interview Questions &amp; Answers</h1>
+  <p class="meta">AI-Based Cloud Redundancy Prediction System — simple language for viva, project review, and job interviews</p>
+
+  <div class="print-hint">
+    <strong>Save as PDF or Word:</strong> Press <code>Ctrl+P</code> → choose <strong>Save as PDF</strong>.
+    For Word: open this file in Microsoft Word, or copy-paste into a new document and Save As <code>.docx</code>.
+  </div>
+
+  <div class="toc">
+    <strong>Topics covered</strong>
+    <ol>
+      <li><a href="#overview">Project overview</a></li>
+      <li><a href="#sha256">SHA-256 &amp; duplicate detection</a></li>
+      <li><a href="#similarity">Similarity algorithms</a></li>
+      <li><a href="#ml">AI / Machine Learning</a></li>
+      <li><a href="#architecture">Architecture &amp; tech stack</a></li>
+      <li><a href="#auth">Users, roles &amp; security</a></li>
+      <li><a href="#scenario">Scenario-based questions</a></li>
+      <li><a href="#tips">Quick tips before interview</a></li>
+    </ol>
+  </div>
+
+  <!-- ========== SECTION 1 ========== -->
+  <h2 id="overview">1. Project Overview</h2>
+
+  <div class="qa">
+    <div class="q"><span>Q1.</span> What is your project about?</div>
+    <div class="a">
+      <strong>Answer:</strong> It is a cloud storage demo that checks uploaded files for duplicates and redundant copies.
+      When a user uploads a PDF, Word file, or image, the system decides whether to <strong>store</strong> it or
+      <strong>reject</strong> it. It also shows a <strong>risk score</strong> and suggestions on the dashboard.
+      The goal is to save storage space by blocking duplicate and near-duplicate files.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q2.</span> What problem does it solve?</div>
+    <div class="a">
+      <strong>Answer:</strong> In cloud storage, people often upload the same file many times, or slightly changed versions
+      of the same document. That wastes space and money. Our system finds exact copies and very similar files automatically,
+      so storage stays clean and optimized.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q3.</span> What technologies did you use?</div>
+    <div class="a">
+      <strong>Answer:</strong>
+      <ul>
+        <li><strong>Frontend:</strong> React, TypeScript, Vite, Recharts</li>
+        <li><strong>Backend:</strong> FastAPI (Python), SQLAlchemy, SQLite</li>
+        <li><strong>ML:</strong> scikit-learn (Logistic Regression)</li>
+        <li><strong>File processing:</strong> pypdf, python-docx, Pillow, ImageHash</li>
+        <li><strong>Auth:</strong> JWT tokens, bcrypt password hashing</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q4.</span> What happens when a user uploads a file? (Short flow)</div>
+    <div class="a">
+      <strong>Answer:</strong> File is uploaded → SHA-256 hash checked → if not exact duplicate, content similarity is calculated
+      → 3 features are built → Logistic Regression predicts redundancy → policy rules + ML rules decide store or reject
+      → result and risk score shown on dashboard → event saved in database.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q5.</span> What file types are supported?</div>
+    <div class="a">
+      <strong>Answer:</strong> PDF, Word (.docx), and images (JPEG, PNG, WebP, GIF). Other types are rejected with an error message.
+    </div>
+  </div>
+
+  <!-- ========== SECTION 2 ========== -->
+  <h2 id="sha256">2. SHA-256 &amp; Duplicate Detection</h2>
+
+  <div class="qa">
+    <div class="q"><span>Q6.</span> What is SHA-256 and why do you use it?</div>
+    <div class="a">
+      <strong>Answer:</strong> SHA-256 is a hashing algorithm. It converts any file into a fixed 64-character fingerprint.
+      If two files have the <strong>same hash</strong>, they are <strong>byte-for-byte identical</strong>.
+      We use it because it is fast, reliable, and perfect for catching exact duplicates before doing slower content analysis.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q7.</span> Is SHA-256 part of AI?</div>
+    <div class="a">
+      <strong>Answer:</strong> No. SHA-256 is a <strong>deterministic mathematical function</strong>, not machine learning.
+      Same input always gives same output. There is no training or prediction — just hashing and comparison.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q8.</span> Can we detect redundancy without SHA-256?</div>
+    <div class="a">
+      <strong>Answer:</strong> Partially yes. We can still find <strong>similar</strong> files using Jaccard similarity (documents)
+      and pHash (images), plus ML. But without SHA-256, catching <strong>exact</strong> duplicates becomes slower
+      (byte-by-byte comparison) or less reliable. SHA-256 is the best first step for identical files.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q9.</span> What is the difference between exact duplicate and near-duplicate?</div>
+    <div class="a">
+      <strong>Answer:</strong>
+      <ul>
+        <li><strong>Exact duplicate:</strong> Every byte is the same. Detected by SHA-256. Decision: <code>rejected_duplicate</code>.</li>
+        <li><strong>Near-duplicate:</strong> Content is very similar but not identical (e.g. edited report). Detected by Jaccard/pHash + ML. Decision: <code>rejected_redundant</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q10.</span> What if someone renames a file and uploads again?</div>
+    <div class="a">
+      <strong>Answer:</strong> If the file content is exactly the same, SHA-256 will still match — filename does not matter.
+      The hash is computed from file <strong>content</strong>, not the name.
+    </div>
+  </div>
+
+  <!-- ========== SECTION 3 ========== -->
+  <h2 id="similarity">3. Similarity Algorithms</h2>
+
+  <div class="qa">
+    <div class="q"><span>Q11.</span> How do you compare PDF and Word documents?</div>
+    <div class="a">
+      <strong>Answer:</strong> We extract text from the uploaded file and from stored files. Then we use
+      <strong>Jaccard word similarity</strong>: we split text into words, make two sets, and calculate
+      <code>common words ÷ total unique words</code>. Higher score = more similar documents.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q12.</span> What is Jaccard similarity in simple words?</div>
+    <div class="a">
+      <strong>Answer:</strong> Imagine two bags of words. Jaccard similarity = (words in both bags) divided by
+      (all unique words in either bag). If two documents share 85 out of 100 unique words total, similarity is 0.85 (85%).
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q13.</span> How do you compare images?</div>
+    <div class="a">
+      <strong>Answer:</strong> We use <strong>perceptual hash (pHash)</strong>. It creates a fingerprint based on how the image
+      <strong>looks</strong>, not exact pixels. Similar images get similar hashes even after small changes like resize or compression.
+      We compare hashes using Hamming distance and convert that to a similarity score.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q14.</span> What is the 92% policy threshold?</div>
+    <div class="a">
+      <strong>Answer:</strong> It is a business rule. If content match is <strong>92% or higher</strong>, the file is rejected
+      as a near-duplicate even before ML decides. Default is 92% but it can be changed in the <code>.env</code> file.
+      This is a rule, not AI.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q15.</span> What is “neighbor frequency”?</div>
+    <div class="a">
+      <strong>Answer:</strong> It counts how many stored files have similarity ≥ 55% with the new upload.
+      If many files are similar, the new file is more likely redundant. This count is one of the 3 ML input features.
+    </div>
+  </div>
+
+  <!-- ========== SECTION 4 ========== -->
+  <h2 id="ml">4. AI / Machine Learning</h2>
+
+  <div class="qa">
+    <div class="q"><span>Q16.</span> Where is AI used in your project?</div>
+    <div class="a">
+      <strong>Answer:</strong> AI is used in one place: <strong>Logistic Regression</strong> from scikit-learn.
+      It predicts the <strong>probability that a file is redundant</strong> (0 to 1). Everything else — SHA-256, Jaccard, pHash,
+      policy rules — is classical programming, not machine learning.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q17.</span> What is Logistic Regression in simple words?</div>
+    <div class="a">
+      <strong>Answer:</strong> It is a machine learning model that takes numbers as input and outputs a
+      <strong>probability between 0 and 1</strong>. Here, 0 means “probably not redundant” and 1 means “probably redundant.”
+      It learns from training data by adjusting weights on each feature.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q18.</span> What are the 3 features fed to the ML model?</div>
+    <div class="a">
+      <strong>Answer:</strong>
+      <table>
+        <tr><th>Feature</th><th>Meaning</th></tr>
+        <tr><td>max_similarity</td><td>Best match score (0–1) against stored files</td></tr>
+        <tr><td>size_ratio</td><td>Smaller file size ÷ larger file size (vs best match)</td></tr>
+        <tr><td>neighbor_frequency</td><td>How many similar files exist (≥55%), scaled 0–1</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q19.</span> How is the model trained?</div>
+    <div class="a">
+      <strong>Answer:</strong> On first startup, if no model file exists, the system creates <strong>4,000 synthetic (fake) examples</strong>
+      with hand-written rules and trains Logistic Regression on them. The model is saved as
+      <code>backend/models/redundancy_model.joblib</code>. It is <strong>not trained on real user uploads</strong> in this demo.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q20.</span> Why synthetic data instead of real uploads?</div>
+    <div class="a">
+      <strong>Answer:</strong> This is a demo/project. Real uploads may not have enough labeled examples at start.
+      Synthetic data lets the model work immediately without waiting for hundreds of labeled files.
+      In production, you would retrain on real labeled data for better accuracy.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q21.</span> What does the dashboard model dropdown do (Random Forest, Neural Network, etc.)?</div>
+    <div class="a">
+      <strong>Answer:</strong> In the current project, it is <strong>UI only</strong>. The backend always uses
+      <strong>Logistic Regression</strong>. The dropdown is for future extension — multiple models are not implemented yet.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q22.</span> How is the risk score calculated?</div>
+    <div class="a">
+      <strong>Answer:</strong> It combines ML probability and similarity:
+      <br /><code>risk = 0.45 × ML_prob + 0.35 × max_similarity + 0.20 × (ML_prob × max_similarity)</code>
+      <br />Then multiply by 100 to get 0–100%. High = 66%+, Medium = 34–65%, Low = below 34%.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q23.</span> When is a file finally rejected?</div>
+    <div class="a">
+      <strong>Answer:</strong> A file is rejected if <strong>any</strong> of these is true:
+      <ul>
+        <li>SHA-256 matches an existing file (exact duplicate)</li>
+        <li>Content match ≥ 92% (policy threshold)</li>
+        <li>Similarity ≥ 96%</li>
+        <li>ML probability ≥ 88% AND similarity ≥ 40%</li>
+        <li>ML probability ≥ 62% AND similarity ≥ 50%</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q24.</span> Why use ML if you already have similarity and rules?</div>
+    <div class="a">
+      <strong>Answer:</strong> Similarity alone cannot capture all patterns. ML combines multiple signals —
+      similarity, file size, and how many neighbors are similar — into one probability. Rules handle clear cases;
+      ML helps with borderline cases where simple thresholds are not enough.
+    </div>
+  </div>
+
+  <!-- ========== SECTION 5 ========== -->
+  <h2 id="architecture">5. Architecture &amp; Tech Stack</h2>
+
+  <div class="qa">
+    <div class="q"><span>Q25.</span> Explain frontend and backend communication.</div>
+    <div class="a">
+      <strong>Answer:</strong> React frontend runs on port 5173. Vite proxies <code>/api</code> requests to FastAPI on port 8000.
+      Frontend sends JWT token in the <code>Authorization</code> header. Backend validates token and returns JSON responses.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q26.</span> Why FastAPI instead of Flask or Django?</div>
+    <div class="a">
+      <strong>Answer:</strong> FastAPI is modern, fast, has automatic API documentation (<code>/docs</code>),
+      built-in data validation with Pydantic, and good async support for file uploads. Good choice for REST APIs.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q27.</span> Which database tables do you have?</div>
+    <div class="a">
+      <strong>Answer:</strong>
+      <ul>
+        <li><strong>users</strong> — accounts, roles (admin/user), passwords (hashed)</li>
+        <li><strong>stored_files</strong> — files that were accepted and saved</li>
+        <li><strong>upload_events</strong> — every upload attempt (stored or rejected) for analytics</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q28.</span> Where are uploaded files stored physically?</div>
+    <div class="a">
+      <strong>Answer:</strong> On disk under <code>backend/storage/uploads/{user_id}/</code>. Metadata (hash, similarity, risk) is in SQLite.
+      Files are served via <code>/static/uploads</code>.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q29.</span> What is the main file that runs the upload pipeline?</div>
+    <div class="a">
+      <strong>Answer:</strong> <code>backend/app/services/process_upload.py</code> — function <code>process_upload()</code>.
+      It orchestrates hashing, similarity, ML, decision, and database save.
+    </div>
+  </div>
+
+  <!-- ========== SECTION 6 ========== -->
+  <h2 id="auth">6. Users, Roles &amp; Security</h2>
+
+  <div class="qa">
+    <div class="q"><span>Q30.</span> What is the difference between Admin and User?</div>
+    <div class="a">
+      <strong>Answer:</strong>
+      <ul>
+        <li><strong>Admin:</strong> Sees global dashboard, all uploads/stats, can create/manage/delete users.</li>
+        <li><strong>User:</strong> Uses the portal — upload files and see only their own duplicates and stats.</li>
+      </ul>
+      Each user’s files are checked only against <strong>their own library</strong>, not other users’ files.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q31.</span> How does login and authentication work?</div>
+    <div class="a">
+      <strong>Answer:</strong> User sends username/password to <code>/api/auth/login</code>. Backend verifies with bcrypt,
+      returns a <strong>JWT token</strong>. Frontend stores token in localStorage and sends it with every API request.
+      Protected routes check the token before allowing access.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q32.</span> What is JWT?</div>
+    <div class="a">
+      <strong>Answer:</strong> JWT (JSON Web Token) is a secure token that proves the user is logged in.
+      It contains user id, username, role, and expiry time. Backend signs it with a secret key so it cannot be faked easily.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q33.</span> Why hash passwords with bcrypt?</div>
+    <div class="a">
+      <strong>Answer:</strong> Passwords must never be stored in plain text. bcrypt converts password into a one-way hash
+      that is slow to compute — this makes brute-force attacks harder. We only compare hashes at login, never store raw passwords.
+    </div>
+  </div>
+
+  <!-- ========== SECTION 7 ========== -->
+  <h2 id="scenario">7. Scenario-Based Questions</h2>
+
+  <div class="qa">
+    <div class="q"><span>Q34.</span> User uploads the exact same PDF twice. What happens?</div>
+    <div class="a">
+      <strong>Answer:</strong> First upload: stored (if not similar to anything else). Second upload: SHA-256 matches the first file →
+      immediately rejected as <code>rejected_duplicate</code>, risk 100%, no ML needed.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q35.</span> User uploads a report that is 89% similar to an old report. What happens?</div>
+    <div class="a">
+      <strong>Answer:</strong> SHA-256 different → similarity scan finds 89% Jaccard match → features built → ML gives high redundancy probability →
+      if ML rules trigger (e.g. prob ≥ 62% and sim ≥ 50%), file is <code>rejected_redundant</code>. Policy 92% does not reject (89 &lt; 92).
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q36.</span> Two different users upload the same file. Is the second rejected?</div>
+    <div class="a">
+      <strong>Answer:</strong> No — not in our project. Each user has a separate file library. User B’s upload is compared only to User B’s stored files,
+      not User A’s. This is by design for multi-user privacy.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q37.</span> What improvements would you make in production?</div>
+    <div class="a">
+      <strong>Answer:</strong> Train ML on real labeled data; add Alembic migrations; use PostgreSQL instead of SQLite;
+      wire up multiple ML models; add cloud storage (S3/Azure); rate limiting; stronger JWT secret from environment;
+      optional global dedup across organization; unit and integration tests.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q38.</span> What are limitations of your project?</div>
+    <div class="a">
+      <strong>Answer:</strong>
+      <ul>
+        <li>ML trained on synthetic data, not real uploads</li>
+        <li>Model dropdown on UI is not connected to backend</li>
+        <li>Per-user dedup only (not organization-wide)</li>
+        <li>SQLite — not ideal for very large scale</li>
+        <li>Text extraction from PDF may miss scanned/image PDFs</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 8 ========== -->
+  <h2 id="tips">8. Quick Tips Before Interview</h2>
+
+  <table>
+    <tr><th>Topic</th><th>One-line answer to remember</th></tr>
+    <tr><td>Project purpose</td><td>Detect duplicate/redundant files to save cloud storage</td></tr>
+    <tr><td>SHA-256</td><td>Exact duplicate detection — not AI</td></tr>
+    <tr><td>Jaccard</td><td>Document text similarity</td></tr>
+    <tr><td>pHash</td><td>Image visual similarity</td></tr>
+    <tr><td>Only AI part</td><td>Logistic Regression → redundancy probability</td></tr>
+    <tr><td>3 ML features</td><td>max_similarity, size_ratio, neighbor_frequency</td></tr>
+    <tr><td>Reject at 92%</td><td>Policy rule for near-duplicates</td></tr>
+    <tr><td>Admin vs User</td><td>Admin manages all; User sees own files only</td></tr>
+    <tr><td>Stack</td><td>React + FastAPI + SQLite + scikit-learn</td></tr>
+  </table>
+
+  <p class="meta" style="margin-top: 2rem;">
+    Document: docs/INTERVIEW_QA.html · Project: AI-Based Cloud Redundancy Prediction System
+  </p>
+
+</body>
+</html>

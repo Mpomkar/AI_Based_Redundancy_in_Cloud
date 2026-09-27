@@ -19,4 +19,5 @@ Write-Host ""
 Write-Host "Servers starting in separate windows." -ForegroundColor Green
 Write-Host "  App:    http://localhost:5173"
 Write-Host "  API:    http://127.0.0.1:8000"
-Write-Host "  Login:  admin / ADMIN123"
+Write-Host "  Admin:  admin / ADMIN123"
+Write-Host "  User:   user / USER123"

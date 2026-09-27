@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -17,17 +17,21 @@ import {
   DashboardStats,
   UploadEvent,
   UploadResult,
+  UserAccount,
   fetchEvents,
   fetchStats,
+  fetchUsers,
   uploadFile,
 } from "../api";
-import { logout } from "../auth";
+import { getUser, logoutWithToast } from "../auth";
+import Toast, { toastKindFromDecision } from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 
 const MODELS = [
   "Logistic Regression",
-  "Random Forest",
-  "HistGradientBoosting",
-  "Neural Network (MLP)",
+  // "Random Forest",
+  // "HistGradientBoosting",
+  // "Neural Network (MLP)",
 ];
 
 function formatBytes(n: number): string {
@@ -61,6 +65,7 @@ function fileEmoji(name: string): string {
 function rowAction(ev: UploadEvent): string {
   if (ev.decision === "rejected_duplicate") return "Duplicate";
   if (ev.decision === "rejected_redundant") return "Redundant";
+  if (ev.decision === "stored_shared") return "Shared 0 KB";
   if (ev.max_similarity >= 0.55 && ev.max_similarity < 0.85) return "Similar";
   if (ev.max_similarity < 0.2) return "Unique";
   return "Normal";
@@ -68,22 +73,44 @@ function rowAction(ev: UploadEvent): string {
 
 export default function Dashboard() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const account = getUser();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [events, setEvents] = useState<UploadEvent[]>([]);
+  const [users, setUsers] = useState<UserAccount[]>([]);
+  const [filterUserId, setFilterUserId] = useState<number | "all">(() => {
+    const u = searchParams.get("user");
+    if (u && !Number.isNaN(Number(u))) return Number(u);
+    return "all";
+  });
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [model, setModel] = useState(MODELS[0]);
   const [lastAnalysis, setLastAnalysis] = useState<UploadResult | null>(null);
+  const { toast, toastKind, showToast, clearToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
     setErr(null);
-    const [s, e] = await Promise.all([fetchStats(), fetchEvents()]);
+    const uid = filterUserId === "all" ? undefined : filterUserId;
+    const [s, e, u] = await Promise.all([
+      fetchStats(),
+      fetchEvents(uid),
+      fetchUsers(),
+    ]);
     setStats(s);
     setEvents(e);
-  }, []);
+    setUsers(u.filter((x) => x.role === "user" || x.role === "admin"));
+  }, [filterUserId]);
+
+  useEffect(() => {
+    const u = searchParams.get("user");
+    if (u && !Number.isNaN(Number(u))) {
+      setFilterUserId(Number(u));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setLoading(true);
@@ -101,15 +128,19 @@ export default function Dashboard() {
         for (const f of Array.from(files)) {
           const res = await uploadFile(f, model);
           setLastAnalysis(res);
+          if (res.toast_message) {
+            showToast(res.toast_message, toastKindFromDecision(res.decision));
+          }
         }
         await refresh();
       } catch (e) {
         setErr(String(e));
+        showToast(String(e), "error");
       } finally {
         setUploading(false);
       }
     },
-    [refresh, model]
+    [refresh, model, showToast]
   );
 
   const totalFiles = stats?.total_upload_attempts ?? 0;
@@ -146,20 +177,29 @@ export default function Dashboard() {
 
   return (
     <div className="dash-root">
+      <Toast message={toast} kind={toastKind} onClose={clearToast} />
       <header className="dash-header">
         <h1 className="dash-header-title">
           AI-Based Cloud Redundancy Prediction System
         </h1>
-        <button
-          type="button"
-          className="dash-logout"
-          onClick={() => {
-            logout();
-            nav("/login", { replace: true });
-          }}
-        >
-          Logout
-        </button>
+        <div className="dash-header-actions">
+          <span className="dash-user-chip">
+            Admin: {account?.username ?? "admin"}
+          </span>
+          <Link to="/admin/users" className="dash-nav-link">
+            Manage Users
+          </Link>
+          <button
+            type="button"
+            className="dash-logout"
+            onClick={() => {
+              logoutWithToast(`Goodbye${account?.username ? `, ${account.username}` : ""}! You are logged out.`);
+              nav("/login", { replace: true });
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <div className="dash-body">
@@ -200,11 +240,32 @@ export default function Dashboard() {
 
         <section className="dash-mid">
           <div className="dash-table-card">
-            <div className="table-head">File Status</div>
+            <div className="table-head table-head-row">
+              <span>File Status (All Users)</span>
+              <label className="user-filter-row">
+                <span>User</span>
+                <select
+                  className="model-select"
+                  value={filterUserId === "all" ? "all" : String(filterUserId)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFilterUserId(v === "all" ? "all" : Number(v));
+                  }}
+                >
+                  <option value="all">All users</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.username} ({u.role})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <div className="table-scroll">
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th>User</th>
                     <th>File Name</th>
                     <th>Similarity</th>
                     <th>Risk Score</th>
@@ -215,9 +276,11 @@ export default function Dashboard() {
                 <tbody>
                   {events.slice(0, 12).map((ev) => {
                     const rb = riskBand(ev.risk_score);
-                    const stored = ev.decision === "stored";
+                    const stored =
+                      ev.decision === "stored" || ev.decision === "stored_shared";
                     return (
                       <tr key={ev.id}>
+                        <td>{ev.username || "—"}</td>
                         <td>
                           <span className="fn-icon">{fileEmoji(ev.original_name)}</span>{" "}
                           {ev.original_name}
@@ -231,7 +294,11 @@ export default function Dashboard() {
                         <td
                           className={stored ? "st-stored" : "st-rejected"}
                         >
-                          {stored ? "Stored" : "Rejected"}
+                          {ev.decision === "stored_shared"
+                            ? "Stored 0 KB"
+                            : stored
+                              ? "Stored"
+                              : "Rejected"}
                         </td>
                         <td className="td-action">{rowAction(ev)}</td>
                       </tr>
@@ -458,19 +525,46 @@ export default function Dashboard() {
                     <strong>Prediction:</strong>{" "}
                     <span
                       className={
-                        lastAnalysis.decision === "stored" ? "pred-ok" : "pred-bad"
+                        lastAnalysis.decision === "stored" ||
+                        lastAnalysis.decision === "stored_shared"
+                          ? "pred-ok"
+                          : "pred-bad"
                       }
                     >
                       {lastAnalysis.decision === "stored"
                         ? "Not Redundant"
-                        : "Redundant"}
+                        : lastAnalysis.decision === "stored_shared"
+                          ? "Shared (0 KB)"
+                          : "Redundant"}
                     </span>
                   </li>
                   <li>
                     <strong>Action:</strong>{" "}
-                    {lastAnalysis.decision === "stored" ? "Stored" : "Not Stored"}
+                    {lastAnalysis.decision === "stored"
+                      ? "Stored"
+                      : lastAnalysis.decision === "stored_shared"
+                        ? "Stored as 0 KB shared reference"
+                        : "Not Stored"}
                   </li>
-                  {lastAnalysis.decision !== "stored" && (
+                  {lastAnalysis.decision === "stored_shared" && (
+                    <li>
+                      <strong>Stored size:</strong> 0 B
+                      {lastAnalysis.original_size_bytes != null && (
+                        <span className="compared-hint">
+                          {" "}
+                          (saved {formatBytes(lastAnalysis.original_size_bytes)})
+                        </span>
+                      )}
+                      {lastAnalysis.compared_to_user && (
+                        <span className="compared-hint">
+                          {" "}
+                          — matched user "{lastAnalysis.compared_to_user}"
+                        </span>
+                      )}
+                    </li>
+                  )}
+                  {lastAnalysis.decision !== "stored" &&
+                    lastAnalysis.decision !== "stored_shared" && (
                     <li>
                       <strong>Storage Saved:</strong>{" "}
                       {formatBytes(lastAnalysis.size_bytes)}

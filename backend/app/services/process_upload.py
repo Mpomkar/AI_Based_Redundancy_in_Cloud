@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import StoredFileRecord, UploadEvent
+from app.models import StoredFileRecord, UploadEvent, User
 from app.services.docx_text import extract_docx_text
 from app.services.features import build_features
 from app.services.hasher import sha256_bytes
@@ -28,8 +28,24 @@ def _kind_from_mime(mime: str) -> str | None:
     return None
 
 
-def _ensure_dirs() -> Path:
-    base = settings.storage_dir / settings.uploads_subdir
+def _kind_from_filename(filename: str) -> str | None:
+    ext = Path(filename or "").suffix.lower()
+    if ext == ".pdf":
+        return "pdf"
+    if ext == ".docx":
+        return "docx"
+    if ext in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
+        return "image"
+    return None
+
+
+def _detect_kind(mime: str, filename: str) -> str | None:
+    """Prefer MIME, fall back to extension (browsers often send octet-stream)."""
+    return _kind_from_mime(mime) or _kind_from_filename(filename)
+
+
+def _ensure_dirs(user_id: int) -> Path:
+    base = settings.storage_dir / settings.uploads_subdir / str(user_id)
     base.mkdir(parents=True, exist_ok=True)
     return base
 
@@ -64,8 +80,9 @@ def process_upload(
     filename: str,
     mime: str,
     data: bytes,
+    user_id: int,
 ) -> dict:
-    kind = _kind_from_mime(mime)
+    kind = _detect_kind(mime, filename)
     if not kind:
         raise ValueError(
             "Unsupported file type. Upload PDF, Word (.docx), or image (JPEG, PNG, WebP, GIF)."
@@ -77,9 +94,16 @@ def process_upload(
 
     policy_meta = {"policy_threshold_percent": threshold}
 
-    existing = db.execute(select(StoredFileRecord).where(StoredFileRecord.sha256 == h)).scalar_one_or_none()
+    # 1) Same user already has this exact file → reject (no second copy for them)
+    existing = db.execute(
+        select(StoredFileRecord).where(
+            StoredFileRecord.sha256 == h,
+            StoredFileRecord.user_id == user_id,
+        )
+    ).scalar_one_or_none()
     if existing:
         ev = UploadEvent(
+            user_id=user_id,
             original_name=filename,
             sha256=h,
             size_bytes=size,
@@ -95,15 +119,95 @@ def process_upload(
         return {
             "filename": filename,
             "decision": "rejected_duplicate",
-            "reason": "Exact duplicate (SHA-256 match).",
+            "reason": "Exact duplicate — you already uploaded this file (same content).",
             "sha256": h,
             "size_bytes": size,
+            "original_size_bytes": size,
             "max_similarity": 1.0,
             "risk_score": 100.0,
             "ml_redundant_probability": 1.0,
             "content_match_percent": 100.0,
-            "compared_to_filename": None,
-            "content_guidance": "Byte-identical to an already stored file (same SHA-256).",
+            "compared_to_filename": existing.original_name,
+            "compared_to_user": None,
+            "content_guidance": "Byte-identical to a file already in your library (same SHA-256).",
+            "toast_message": (
+                f'Duplicate blocked: "{filename}" matches your existing file '
+                f'"{existing.original_name}". Not stored again.'
+            ),
+            **policy_meta,
+        }
+
+    # 2) Another user already has the same content → store for this user as 0 KB shared ref
+    global_match = db.execute(
+        select(StoredFileRecord)
+        .where(
+            StoredFileRecord.sha256 == h,
+            StoredFileRecord.user_id != user_id,
+            StoredFileRecord.decision.in_(("stored", "stored_shared")),
+        )
+        .order_by(StoredFileRecord.size_bytes.desc())
+    ).scalars().first()
+    if global_match:
+        owner = db.get(User, global_match.user_id) if global_match.user_id else None
+        owner_name = owner.username if owner else "another user"
+        shared_path = global_match.relative_path or ""
+        toast = (
+            f'Same content already exists (uploaded by {owner_name} as '
+            f'"{global_match.original_name}"). Your file "{filename}" was stored '
+            f"as a 0 KB shared reference - no extra storage used."
+        )
+        reason = (
+            f"Stored as 0 KB shared copy: identical content already in the system "
+            f'(user "{owner_name}", file "{global_match.original_name}").'
+        )
+        rec = StoredFileRecord(
+            user_id=user_id,
+            original_name=filename,
+            sha256=h,
+            mime=mime,
+            size_bytes=0,  # 0 KB for this user — physical bytes reused
+            relative_path=shared_path,
+            kind=kind,
+            pdf_text_excerpt=global_match.pdf_text_excerpt,
+            image_phash=global_match.image_phash,
+            max_similarity=1.0,
+            risk_score=100.0,
+            ml_redundant_proba=1.0,
+            decision="stored_shared",
+        )
+        db.add(rec)
+        ev = UploadEvent(
+            user_id=user_id,
+            original_name=filename,
+            sha256=h,
+            size_bytes=size,  # original size counted as storage saved
+            mime=mime,
+            kind=kind,
+            max_similarity=1.0,
+            risk_score=100.0,
+            decision="stored_shared",
+            reason=_truncate(reason),
+        )
+        db.add(ev)
+        db.commit()
+        return {
+            "filename": filename,
+            "decision": "stored_shared",
+            "reason": reason,
+            "sha256": h,
+            "size_bytes": 0,
+            "original_size_bytes": size,
+            "max_similarity": 1.0,
+            "risk_score": 100.0,
+            "ml_redundant_probability": 1.0,
+            "content_match_percent": 100.0,
+            "compared_to_filename": global_match.original_name,
+            "compared_to_user": owner_name,
+            "content_guidance": (
+                "Exact match with another user's file. Your account keeps a listing "
+                "with 0 KB stored; the original bytes are shared on the server."
+            ),
+            "toast_message": toast,
             **policy_meta,
         }
 
@@ -124,8 +228,9 @@ def process_upload(
             doc_text = ""
         rows = db.execute(
             select(StoredFileRecord).where(
+                StoredFileRecord.user_id == user_id,
                 StoredFileRecord.kind.in_(("pdf", "docx")),
-                StoredFileRecord.decision == "stored",
+                StoredFileRecord.decision.in_(("stored", "stored_shared")),
             )
         ).scalars().all()
         for row in rows:
@@ -145,8 +250,9 @@ def process_upload(
             raise ValueError(f"Could not read image: {e}") from e
         rows = db.execute(
             select(StoredFileRecord).where(
+                StoredFileRecord.user_id == user_id,
                 StoredFileRecord.kind == "image",
-                StoredFileRecord.decision == "stored",
+                StoredFileRecord.decision.in_(("stored", "stored_shared")),
                 StoredFileRecord.image_phash.isnot(None),
             )
         ).scalars().all()
@@ -198,15 +304,16 @@ def process_upload(
 
     rel_path = ""
     if not reject:
-        upload_dir = _ensure_dirs()
+        upload_dir = _ensure_dirs(user_id)
         ext = _default_ext(kind, filename)
         safe_name = f"{uuid.uuid4().hex}{ext}"
         full = upload_dir / safe_name
         full.write_bytes(data)
-        rel_path = f"{settings.uploads_subdir}/{safe_name}"
+        rel_path = f"{settings.uploads_subdir}/{user_id}/{safe_name}"
 
         excerpt = (doc_text[:80_000] if doc_text else None)
         rec = StoredFileRecord(
+            user_id=user_id,
             original_name=filename,
             sha256=h,
             mime=mime,
@@ -223,6 +330,7 @@ def process_upload(
         db.add(rec)
 
     ev = UploadEvent(
+        user_id=user_id,
         original_name=filename,
         sha256=h,
         size_bytes=size,
@@ -236,17 +344,27 @@ def process_upload(
     db.add(ev)
     db.commit()
 
+    toast: str | None = None
+    if reject:
+        # reason already starts with "Rejected:"
+        toast = reason
+    else:
+        toast = f'Stored successfully: "{filename}" ({size} bytes).'
+
     return {
         "filename": filename,
         "decision": decision,
         "reason": reason,
         "sha256": h,
-        "size_bytes": size,
+        "size_bytes": size if not reject else size,
+        "original_size_bytes": size,
         "max_similarity": round(max_sim, 4),
         "risk_score": risk,
         "ml_redundant_probability": round(ml_p, 4),
         "content_match_percent": round(sim_percent, 2),
         "compared_to_filename": compared_to,
+        "compared_to_user": None,
         "content_guidance": content_guidance,
+        "toast_message": toast,
         **policy_meta,
     }

@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     content_match_reject_threshold_percent: float = 92.0
     max_pdf_text_chars: int = 120_000
     image_hash_size: int = 8
+    jwt_secret_key: str = "change-me-in-production-cloud-redundancy-ai"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 480
 
 
 settings = Settings()
