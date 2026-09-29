@@ -26,6 +26,11 @@ import {
 import { getUser, logoutWithToast } from "../auth";
 import Toast, { toastKindFromDecision } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
+import {
+  UPLOAD_HINT,
+  errorMessage,
+  validateUploadFileClient,
+} from "../uploadValidation";
 
 const MODELS = [
   "Logistic Regression",
@@ -119,6 +124,21 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, [refresh]);
 
+  // Keep multi-browser / multi-PC views in sync when returning to this tab
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refresh().catch(() => {});
+      }
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [refresh]);
+
   const handleFiles = useCallback(
     async (files: FileList | null) => {
       if (!files?.length) return;
@@ -126,6 +146,12 @@ export default function Dashboard() {
       setErr(null);
       try {
         for (const f of Array.from(files)) {
+          const clientErr = validateUploadFileClient(f);
+          if (clientErr) {
+            setErr(clientErr);
+            showToast(clientErr, "error");
+            continue;
+          }
           const res = await uploadFile(f, model);
           setLastAnalysis(res);
           if (res.toast_message) {
@@ -134,8 +160,9 @@ export default function Dashboard() {
         }
         await refresh();
       } catch (e) {
-        setErr(String(e));
-        showToast(String(e), "error");
+        const msg = errorMessage(e);
+        setErr(msg);
+        showToast(msg, "error");
       } finally {
         setUploading(false);
       }
@@ -443,6 +470,9 @@ export default function Dashboard() {
                 {uploading ? "Processing…" : "Upload"}
               </button>
             </div>
+            <p className="portal-hint" style={{ marginTop: "0.75rem" }}>
+              {UPLOAD_HINT}
+            </p>
 
             {lastAnalysis && (
               <div className="donut-wrap">

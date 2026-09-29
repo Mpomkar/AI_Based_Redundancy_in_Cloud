@@ -15,6 +15,7 @@ from app.services.image_sim import phash_hex, phash_similarity
 from app.services.pdf_text import extract_pdf_text, jaccard_word_similarity
 from app.services.predictor import redundant_probability, risk_score
 from app.services.text_guidance import build_content_guidance, build_image_guidance
+from app.services.upload_validation import reject_if_blocked, validate_file_content
 
 
 def _kind_from_mime(mime: str) -> str | None:
@@ -82,11 +83,13 @@ def process_upload(
     data: bytes,
     user_id: int,
 ) -> dict:
+    reject_if_blocked(filename, mime)
     kind = _detect_kind(mime, filename)
     if not kind:
         raise ValueError(
             "Unsupported file type. Upload PDF, Word (.docx), or image (JPEG, PNG, WebP, GIF)."
         )
+    validate_file_content(kind, data)
 
     threshold = settings.content_match_reject_threshold_percent
     h = sha256_bytes(data)
@@ -247,7 +250,9 @@ def process_upload(
         try:
             img_phash = phash_hex(data)
         except Exception as e:
-            raise ValueError(f"Could not read image: {e}") from e
+            raise ValueError(
+                "Corrupted or unreadable image. The file could not be opened and was not accepted."
+            ) from e
         rows = db.execute(
             select(StoredFileRecord).where(
                 StoredFileRecord.user_id == user_id,

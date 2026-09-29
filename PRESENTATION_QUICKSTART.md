@@ -18,11 +18,11 @@ From the project root folder `Final-Project-main`:
 
 Or manually in **two** terminals:
 
-**Terminal 1 — Backend**
+**Terminal 1 — Backend** (listens on all interfaces for LAN sharing)
 
 ```powershell
 cd backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Terminal 2 — Frontend**
@@ -30,10 +30,10 @@ cd backend
 ```powershell
 cd frontend
 npm install
-npm run dev
+npm run dev -- --host
 ```
 
-Open: **http://localhost:5173**
+Open: **http://localhost:5173** (or the LAN URL printed in the terminal)
 
 ## Login accounts
 
@@ -44,6 +44,27 @@ Open: **http://localhost:5173**
 
 Username is case-insensitive (`Admin` works). Password is case-sensitive.
 
+## Same admin on two PCs (shared files)
+
+**Why it looked broken:** each PC that runs its own backend gets a **separate** `backend/app.db`. Same login (`admin`) exists on both, but uploads are **not** shared.
+
+**Correct setup — one shared backend:**
+
+1. Run `.\scripts\start-all.ps1` on **PC-A only**.
+2. Note the **LAN** URL printed (example: `http://192.168.1.10:5173`).
+3. On **PC-B**, open that LAN URL in the browser (do **not** start another backend).
+4. Login as `admin` / `ADMIN123` — uploads from either PC appear for everyone using PC-A’s server.
+
+Optional: if PC-B must run its own Vite, set `frontend/.env`:
+
+```env
+VITE_API_BASE=http://192.168.1.10:8000
+```
+
+then `npm run dev` on PC-B (pointing at PC-A’s API).
+
+Allow Windows Firewall for ports **8000** and **5173** on PC-A if LAN access fails.
+
 ## Demo script (2–3 minutes)
 
 1. Login as **admin** → show global File Status, charts, Manage Users.
@@ -52,12 +73,12 @@ Username is case-insensitive (`Admin` works). Password is case-sensitive.
 4. Upload a PDF/DOCX/image as **user** → show analysis.
 5. Upload the **same file again** as the same user → exact duplicate **blocked** (toast).
 6. Logout → login as **admin** (or another user) → upload the **same file with a different name** → it is **stored as 0 KB shared** (toast), not blocked.
-7. Admin dashboard → filter by user → see “Stored 0 KB” / Shared action.
+7. Admin dashboard → filter by user → see "Stored 0 KB" / Shared action.
 
 ## Important
 
 - Backend must run on port **8000** and frontend on **5173**.
-- Opening `http://127.0.0.1:8000` in the browser shows 404 — that is normal (API only). Use `/docs` for API docs.
+- Opening `http://127.0.0.1:8000` in the browser alone is the API — use `/docs` for API docs, or the frontend URL for the UI.
 - Supported uploads: PDF, Word (.docx), JPEG/PNG/WebP/GIF.
 
 ## If login fails with Not Found

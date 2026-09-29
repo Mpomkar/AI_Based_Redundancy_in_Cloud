@@ -11,6 +11,11 @@ import {
 import { getUser, logoutWithToast } from "../auth";
 import Toast, { toastKindFromDecision } from "../components/Toast";
 import { useToast } from "../hooks/useToast";
+import {
+  UPLOAD_HINT,
+  errorMessage,
+  validateUploadFileClient,
+} from "../uploadValidation";
 
 const MODELS = [
   "Logistic Regression",
@@ -96,6 +101,20 @@ export default function UserPortal() {
       .finally(() => setLoading(false));
   }, [refresh]);
 
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refresh().catch(() => {});
+      }
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [refresh]);
+
   const handleFiles = useCallback(
     async (files: FileList | null) => {
       if (!files?.length) return;
@@ -103,6 +122,12 @@ export default function UserPortal() {
       setErr(null);
       try {
         for (const f of Array.from(files)) {
+          const clientErr = validateUploadFileClient(f);
+          if (clientErr) {
+            setErr(clientErr);
+            showToast(clientErr, "error");
+            continue;
+          }
           const res = await uploadFile(f, model);
           setLastAnalysis(res);
           if (res.toast_message) {
@@ -111,8 +136,9 @@ export default function UserPortal() {
         }
         await refresh();
       } catch (e) {
-        setErr(String(e));
-        showToast(String(e), "error");
+        const msg = errorMessage(e);
+        setErr(msg);
+        showToast(msg, "error");
       } finally {
         setUploading(false);
       }
@@ -239,6 +265,8 @@ export default function UserPortal() {
             </h3>
             <p className="portal-hint">
               You only see your own uploads. Files are checked against your library only — not other users.
+              {" "}
+              {UPLOAD_HINT}
             </p>
             <label className="model-row">
               <span>Model</span>

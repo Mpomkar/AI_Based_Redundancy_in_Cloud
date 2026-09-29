@@ -7,6 +7,13 @@ if [ ! -d "$ROOT/frontend/node_modules" ]; then
   exit 1
 fi
 
-echo "Starting frontend at http://localhost:5173"
+LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+echo "Starting frontend (Vite — reachable on LAN)"
+echo "  Local: http://localhost:5173"
+if [ -n "${LAN_IP:-}" ]; then
+  echo "  LAN:   http://${LAN_IP}:5173"
+fi
+echo "Data is shared when all browsers talk to the SAME backend on this machine."
+
 cd "$ROOT/frontend"
-exec npm run dev
+exec npm run dev -- --host

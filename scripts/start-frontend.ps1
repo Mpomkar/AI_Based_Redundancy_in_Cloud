@@ -9,12 +9,24 @@ if (-not (Test-Path (Join-Path $frontend "node_modules"))) {
 
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction SilentlyContinue
 
-Write-Host "Starting frontend (Vite dev server)" -ForegroundColor Cyan
-Write-Host "Open http://localhost:5173 (or next free port)" -ForegroundColor Gray
+$lanIp = $null
+try {
+    $lanIp = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        Where-Object { $_.IPAddress -notlike "127.*" -and $_.PrefixOrigin -ne "WellKnown" } |
+        Select-Object -ExpandProperty IPAddress -First 1
+} catch { }
+
+Write-Host "Starting frontend (Vite — reachable on LAN)" -ForegroundColor Cyan
+Write-Host "  Local: http://localhost:5173" -ForegroundColor Gray
+if ($lanIp) {
+    Write-Host "  LAN:   http://${lanIp}:5173  <-- open this on other PCs to share data" -ForegroundColor Green
+}
+Write-Host "Data is shared when all browsers talk to the SAME backend on this PC." -ForegroundColor Yellow
+
 Set-Location $frontend
 
 if (Get-Command npm.cmd -ErrorAction SilentlyContinue) {
-    npm.cmd run dev
+    npm.cmd run dev -- --host
 } else {
-    npm run dev
+    npm run dev -- --host
 }

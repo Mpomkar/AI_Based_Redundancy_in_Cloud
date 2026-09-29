@@ -1,6 +1,10 @@
 import { getToken, logout } from "./auth";
 
-const base = "";
+/**
+ * Empty = same-origin / Vite proxy (default local demo).
+ * Set VITE_API_BASE=http://HOST:8000 so another PC talks to a shared backend.
+ */
+const base = String(import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
 
 function authHeaders(extra?: HeadersInit): HeadersInit {
   const token = getToken();

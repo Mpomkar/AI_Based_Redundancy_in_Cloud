@@ -18,7 +18,8 @@ function AdminRoute({ children }: { children: ReactNode }) {
 
 function UserRoute({ children }: { children: ReactNode }) {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
-  // Regular users stay on portal; admins may open portal for testing
+  // Regular users use portal; admins belong on /admin (global view)
+  if (isAdmin()) return <Navigate to="/admin" replace />;
   return children;
 }
 
