@@ -26,6 +26,13 @@ Write-Host "  Docs:   http://127.0.0.1:$port/docs" -ForegroundColor Gray
 if ($lanIp) {
     Write-Host "  LAN:    http://${lanIp}:$port   <-- other PCs use this (or open frontend LAN URL)" -ForegroundColor Green
 }
+# Resolve storage path the same way the app does
+try {
+    $stor = & $venvPython -c "from app.config import settings; print(settings.storage_dir)"
+    Write-Host "  Files:  $stor" -ForegroundColor Green
+} catch {
+    Write-Host "  Files:  Desktop\Uploaded Files (default)" -ForegroundColor Green
+}
 Write-Host "Other systems must use THIS backend to see the same admin files." -ForegroundColor Yellow
 
 Set-Location $backend

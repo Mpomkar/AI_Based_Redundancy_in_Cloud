@@ -55,6 +55,8 @@ Username is case-insensitive (`Admin` works). Password is case-sensitive.
 3. On **PC-B**, open that LAN URL in the browser (do **not** start another backend).
 4. Login as `admin` / `ADMIN123` — uploads from either PC appear for everyone using PC-A’s server.
 
+**Where files are saved:** accepted uploads are written on the **backend PC** under Desktop → **Uploaded Files** → `uploads` → `<user_id>`. Other PCs do not get a local copy; they see the same files through PC-A’s shared backend.
+
 Optional: if PC-B must run its own Vite, set `frontend/.env`:
 
 ```env

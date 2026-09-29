@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from pathlib import Path
 
@@ -74,6 +75,15 @@ def _default_ext(kind: str, filename: str) -> str:
     if kind == "docx":
         return ".docx"
     return ".bin"
+
+
+def _safe_stored_name(filename: str, kind: str) -> str:
+    """Keep original name recognizable on disk; UUID suffix avoids collisions."""
+    ext = _default_ext(kind, filename)
+    stem = Path(filename or "file").stem
+    stem = re.sub(r"[^\w.\-]+", "_", stem, flags=re.UNICODE).strip("._") or "file"
+    stem = stem[:80]
+    return f"{stem}_{uuid.uuid4().hex[:10]}{ext}"
 
 
 def process_upload(
@@ -310,8 +320,7 @@ def process_upload(
     rel_path = ""
     if not reject:
         upload_dir = _ensure_dirs(user_id)
-        ext = _default_ext(kind, filename)
-        safe_name = f"{uuid.uuid4().hex}{ext}"
+        safe_name = _safe_stored_name(filename, kind)
         full = upload_dir / safe_name
         full.write_bytes(data)
         rel_path = f"{settings.uploads_subdir}/{user_id}/{safe_name}"

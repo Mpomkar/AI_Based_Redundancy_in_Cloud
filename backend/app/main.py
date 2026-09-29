@@ -90,6 +90,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    settings.storage_dir.mkdir(parents=True, exist_ok=True)
     upload_root = settings.storage_dir / settings.uploads_subdir
     upload_root.mkdir(parents=True, exist_ok=True)
     app.mount(
